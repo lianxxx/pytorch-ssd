@@ -13,7 +13,8 @@ import numpy as np
 import logging
 import sys
 from vision.ssd.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite, create_mobilenetv2_ssd_lite_predictor
-
+import cv2
+import os
 
 parser = argparse.ArgumentParser(description="SSD Evaluation on VOC Dataset.")
 parser.add_argument('--net', default="vgg16-ssd",
@@ -166,6 +167,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     results = []
+    labelmap = class_names
     for i in range(len(dataset)):
         print("process image", i)
         timer.start("Load Image")
@@ -181,6 +183,25 @@ if __name__ == '__main__':
             probs.reshape(-1, 1),
             boxes + 1.0  # matlab's indexes start from 1
         ], dim=1))
+          # draw eval results
+        save_folder = './eval_imgs'
+        if not os.path.exists(save_folder):
+            os.mkdir(save_folder)
+        frame = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        img_name,_ = dataset.get_annotation(i)
+        for ind in range(len(probs)):
+            if probs[ind] > args.iou_threshold:
+                pt = boxes[ind].cpu().numpy()
+                #paras are image, top left coordinate, bottom right, color, line thickness.
+                cv2.rectangle(frame,
+                              (int(pt[0]), int(pt[1])),
+                              (int(pt[2]), int(pt[3])),
+                              COLORS[labels[ind]%4], 2)
+                text = labelmap[labels[ind]] + ': ' + '{:.2f}'.format(probs[ind].cpu().numpy())
+                cv2.putText(frame, text, (int(pt[0]), int(pt[1])),
+                            FONT, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.imwrite(save_folder + '/' + img_name + '.jpg', frame)
+          
     results = torch.cat(results)
     for class_index, class_name in enumerate(class_names):
         if class_index == 0: continue  # ignore background
