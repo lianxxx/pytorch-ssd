@@ -119,7 +119,8 @@ def compute_average_precision_per_class(num_true_cases, gt_boxes, difficult_case
     else:
         return measurements.compute_average_precision(precision, recall)
 
-
+COLORS = [(255, 0, 0), (0, 255, 0), (0, 0, 255),(255,255,0)]
+FONT = cv2.FONT_HERSHEY_SIMPLEX
 if __name__ == '__main__':
     eval_path = pathlib.Path(args.eval_dir)
     eval_path.mkdir(exist_ok=True)
